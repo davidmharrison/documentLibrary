@@ -154,7 +154,7 @@ $(function() {
 		this.viewoptions.buttonset().find('input').on({
 			click: function( event ) {
 				$('.view').attr('class','view view-'+event.target.id);
-			}
+			},
 		});
 		
 		this.documentview = $("<div>",{
@@ -170,7 +170,7 @@ $(function() {
 		}).appendTo( this.documentview );
 		
 		this.documentviewinnertype = $("<div>",{
-			"class": "view view-column"
+			"class": "view view-"+this.options.view
 		}).appendTo( this.documentviewinner );
 		
 	    // bind click events on the reset button to clear cache and reset element values
@@ -331,7 +331,7 @@ $(function() {
 			}),
 			$("<div>",{
 				"class": "file-size",
-				html: 'Size: <span>'+size+' Kb</span>'
+				html: 'Size: <span>'+size+' bytes</span>'
 			}),
 			$("<div>",{
 				"class": "file-date",
@@ -339,11 +339,11 @@ $(function() {
 			}),
 			$("<div>",{
 				"class": "file-download",
-				html: '<a href="'+widget.directory+'">Download</a>'
+				html: '<a target="blank_" href="'+widget.directory+'">Download</a>'
 			}),
 			$("<div>",{
 				"class": "file-view",
-				html: '<a href="'+widget.directory+'">View</a>'
+				html: '<a target="blank_" href="'+widget.directory+'">View</a>'
 			})
 		
 			];

@@ -21,8 +21,8 @@
 <script>
 $(function() {
 	$('#library').documentLibrary({
-		search: true,
-		title: "David's Document Library"
+		view: 'column',
+		title: " Document Library"
 	});
 });
 </script>
