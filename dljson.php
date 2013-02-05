@@ -1,5 +1,17 @@
 <?php
+error_reporting(E_ALL);
 $dir = $_GET['dir'];
+$file = $_GET['file'];
+$olddir = $_GET['from'];
+$newdir = $_GET['to'];
+
+if($file) {
+	if(!preg_match("(^files/)",$olddir) && !preg_match("(^files/)",$newdir)) die('Malicious Use');
+	if(strpos($olddir,"/../") OR strpos($newdir,"/../")) die('Malicious Use');
+	if(strpos($olddir,"/./") OR strpos($newdir,"/../")) die('Malicious Use');
+	rename(dirname(__FILE__).'/'.$olddir.$file,dirname(__FILE__).'/'.$newdir.$file);
+	die;
+}
 
 //prevent malicious use to gain access to unauthorised directories
 if(strpos($dir,"/../")) die('Malicious Use');

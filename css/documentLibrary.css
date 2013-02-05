@@ -65,19 +65,18 @@
 	overflow-x: scroll;
 }
 .document-view-inner {
-	width: 1000px;
+	width: 100%;
 	height: 385px;
 	overflow-y: hidden;
 	white-space: nowrap;
 }
 .document-view-inner .view {
 	height: 385px;
-	overflow-y: hidden;
-	overflow-x: scroll;
+	overflow: hidden;
 }
 .document-view-inner .view .column {
 	min-width: 200px;
-	height: 370px;
+	height: 385px;
 	background: #fff;
 	display: inline;
 	float: left;
@@ -85,11 +84,24 @@
 	overflow-x: hidden;
 	overflow-y: auto;
 }
+.document-view-inner .view .column:last-child {
+//	border-right: none;	
+}
+
+.document-view-inner .view .column::-webkit-scrollbar {
+	-webkit-appearance: none;
+	width: 11px;
+}
+.document-view-inner .view .column::-webkit-scrollbar-thumb {
+	border-radius: 8px;
+	border: 2px solid white; /* should match background, can't be transparent */
+	background-color: rgba(0, 0, 0, .5);
+}
 .document-view-inner .view.view-folder {
 	float: left;
 }
 .document-view-inner .view.view-folder .column {
-	width: 800px;
+	width: 780px;
 	height: 365px;
 	padding: 10px;
 	background: #fff;
@@ -107,6 +119,7 @@
 	margin: 0px;
 	padding: 0px;
 	overflow-x: hidden;
+	height: 100%;
 }
 .view-folder .folder-contents {
 	padding: 0px;
@@ -169,14 +182,14 @@
 	font-size: 12px;
 }
 .file, .folder {
-	width: 200px;
+//	width: 200px;
 }
 .folder:hover, .folder.clicked, .file:hover, .file.clicked {
 	background-color: #b3d4fc;
 	cursor: pointer;
 }
 .file-contents {
-	margin: 1em 1em;
+	margin: 0em .5em;
 	padding: 0px;
 	text-align: left;
 	position: relative;
@@ -238,4 +251,17 @@
 }
 .file-contents .png {
 	background: url(images/icons/png/png-64_32.png) no-repeat;
+}
+.ui-resizable-s {
+	bottom: 0px !important;
+}
+.ui-resizable-e {
+//	right: 14px !important;
+}
+.ui-resizable-se {
+//	right: 11px !important;
+}
+.ui-sortable-helper {
+	list-style: none;
+	z-index: 1000;
 }

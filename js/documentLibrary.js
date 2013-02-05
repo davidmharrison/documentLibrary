@@ -154,6 +154,16 @@ $(function() {
 		this.viewoptions.buttonset().find('input').on({
 			click: function( event ) {
 				$('.view').attr('class','view view-'+event.target.id);
+				if(event.target.id=='folder') widget.documentviewinnertype.find('.column').resizable( "destroy" );
+				else { 
+				widget.documentviewinnertype.find('.column').resizable({
+					containment: ".document-view-inner",
+				    maxHeight: 385,
+			      	minHeight: 385,
+			      	minWidth: 200,
+				  	resize: function() { widget.setWidth() }
+			    });
+			}
 			},
 		});
 		
@@ -202,12 +212,6 @@ $(function() {
         this._trigger( "getcontents" );
       },
 	  
-	  //change view
-	  view: function( event ) {
-//		  console.log(event.target.id);
-//		  this.view = $(event.target.id);
-	  },
-	  
 	  //clear library and return home folder
       clear: function() {
 
@@ -223,28 +227,59 @@ $(function() {
 		  this.element;
       },
 	  
+	  setWidth: function( event ) {
+		width = 0;				
+		widget.documentviewinnertype.find('.column').each(function( column ){ return width+=$(this).outerWidth()+2; });
+		widget.documentviewinner.css({width: width+'px' });
+	  },
+	  
 	  //set the cached values. private method and can only be set via element changes
 	  getcontents: function( event ) {
 //		  console.log(widget.directory.split('/').length);
 		  if(widget.directory.split('/').length==2) widget.back.button({ disabled: true });
 		  else widget.back.button({ disabled: false });
-		  $.getJSON('dljson.php',{dir: this.directory},function(data) {
+		  parentdir = this.directory;
+		  $.getJSON('dljson.php',{dir: parentdir},function(data) {
 			  directory = [];
 			  
 				widget.newview = $("<div>",{
 					"class": "column"
 				}).appendTo( widget.documentviewinnertype );
-		
+				
+				$('.view.view-column .column').resizable({
+					containment: ".document-view-inner",
+				    maxHeight: 385,
+			      	minHeight: 385,
+			      	minWidth: 200,
+				  	resize: function() { widget.setWidth() }
+			    });
+				
 				widget.homeviewul = $("<ul>",{
 					"class": "folder-contents"
-				}).appendTo( widget.newview );
+				}).data('dir',parentdir).sortable({
+					placeholder: "ui-state-highlight",
+					connectWith: ".column ul",
+					stop: function( event, ui) {
+						olddir = $(event.target).data('dir');
+						newdir = $(ui.item[0].parentElement).data('dir')
+						filname = $(ui.item).text();
+						$.getJSON('dljson.php',{file:filname,from:olddir,to:newdir},function(data){
+//							$(ui.item).removeClass('clicked')
+						});								
+					},
+					change: function( event, ui) {
+						$(ui.item).removeClass('clicked');
+//						event.preventDefault();
+					},
+				}).droppable().disableSelection().appendTo( widget.newview );
+				
 			  if(data) {
   				  $.each(data,function(key,val) {
 					  if(val.ext.length > 0) {
 	  					  file = $("<li>",{
 	  						  "class":"file unclicked "+val.ext
 	  					  }).on({ 
-	  						  click: function( event ) {
+	  						  mouseup: function( event ) {
 								  	columnth = $(event.delegateTarget).closest('.column').index()+1;
 								  	columncount = $('.view-column').find('.column').length;
 									if(columnth <= columncount) {
@@ -271,7 +306,7 @@ $(function() {
 						  folder = $("<li>",{
 							  "class":"folder unclicked"
 						  }).on({ 
-							  click: function( event ) {
+							  mouseup: function( event ) {
 								  	columnth = $(event.delegateTarget).closest('.column').index()+1;
 								  	columncount = $('.view-column').find('.column').length;
 									if(columnth <= columncount) {
@@ -296,6 +331,14 @@ $(function() {
 						  folder.appendTo(widget.homeviewul);
 					  }
 				  });
+/*				  widget.homeviewul.find('li').draggable({
+				        appendTo: "body",
+				        helper: "clone"
+				  });
+*/				  
+//				  widget.newview.jScrollPane();
+//				  if(widget.view=='column') widget.newview.width('200px');
+				  widget.setWidth();
 		  	}
 		  });
 	  },
@@ -349,6 +392,7 @@ $(function() {
 			];
 		
 			$.each(filedetails,function(i,e) { e.appendTo(widget.homeview) });
+			widget.setWidth();
 		});
 	  },
  
