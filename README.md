@@ -18,6 +18,7 @@ Features:
 	* Back and Forward navigation up and down the document tree
 	* Multiple views (folder/column) 
 	* Home button for return to the home directory
+	* Drag and Drop folders/files to new directories
 
 Instructions:
 	1. This widget requires PHP for various functions including returning
@@ -38,5 +39,4 @@ Future Features:
 	* Add Files and Folders (currently has to be done manually)
 	* Search
 	* List view
-	* Drag and Drop folders/files to new directories
 	* Breadcrumb

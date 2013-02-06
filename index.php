@@ -26,7 +26,8 @@
 $(function() {
 	$('#library').documentLibrary({
 		view: 'column',
-		title: " Document Library"
+		title: " Document Library",
+		moveable: false
 	});
 });
 </script>

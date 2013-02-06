@@ -16,6 +16,9 @@ $(function() {
 		title: 'Document Library',
 		//set home directory
 		directory: 'files/',
+		//set moveable folders and files
+		moveable: true,
+		
  
         // callbacks
 		close: null,
@@ -256,22 +259,26 @@ $(function() {
 				
 				widget.homeviewul = $("<ul>",{
 					"class": "folder-contents"
-				}).data('dir',parentdir).sortable({
-					placeholder: "ui-state-highlight",
-					connectWith: ".column ul",
-					stop: function( event, ui) {
-						olddir = $(event.target).data('dir');
-						newdir = $(ui.item[0].parentElement).data('dir')
-						filname = $(ui.item).text();
-						$.getJSON('dljson.php',{file:filname,from:olddir,to:newdir},function(data){
-//							$(ui.item).removeClass('clicked')
-						});								
-					},
-					change: function( event, ui) {
-						$(ui.item).removeClass('clicked');
-//						event.preventDefault();
-					},
-				}).droppable().disableSelection().appendTo( widget.newview );
+				}).data('dir',parentdir).appendTo( widget.newview );
+				
+				if(widget.options.moveable==true) {
+					widget.homeviewul.sortable({
+						placeholder: "ui-state-highlight",
+						connectWith: ".column ul",
+						stop: function( event, ui) {
+							olddir = $(event.target).data('dir');
+							newdir = $(ui.item[0].parentElement).data('dir')
+							filname = $(ui.item).text();
+							$.getJSON('dljson.php',{file:filname,from:olddir,to:newdir},function(data){
+//								$(ui.item).removeClass('clicked')
+							});								
+						},
+						change: function( event, ui) {
+							$(ui.item).removeClass('clicked');
+//							event.preventDefault();
+						},
+					}).droppable().disableSelection();
+				}
 				
 			  if(data) {
   				  $.each(data,function(key,val) {
