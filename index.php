@@ -16,6 +16,12 @@
 <!--<script src="js/jquery-1.9.0.js"></script>
 <script src="js/jquery-ui.js"></script>-->
 <script src="js/jScrollPane.js"></script>
+<!--<script src="js/dragndrop.js"></script>-->
+<!-- <script src="File-Upload/js/jquery.iframe-transport.js"></script>
+<script src="File-Upload/js/jquery.fileupload.js"></script>
+<script src="File-Upload/js/jquery.fileupload-fp.js"></script>
+<script src="File-Upload/js/jquery.fileupload-ui.js"></script>
+<script src="File-Upload/js/jquery.fileupload-jui.js"></script> -->
 <script src="js/jquery.em.js"></script>
 <script src="js/jquery.mousewheel.js"></script>
 <script src="js/documentLibrary.js"></script>

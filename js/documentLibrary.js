@@ -5,6 +5,20 @@ http://www.twitter.com/watchinharrison
 ***************************************/
 
 $(function() {
+	String.prototype.trunc = 
+      function(n){
+          if(this.length > (n+14)) return this.substr(0,n-1)+(this.length>n?'...':'')+(this.substr((this.length-10),10));
+		  else return this;
+      };
+	  
+	  var delay = (function(){
+	    var timer = 0;
+	    return function(callback, ms){
+	      clearTimeout (timer);
+	      timer = setTimeout(callback, ms);
+	    };
+	  })();
+		  
 	$.widget( "wh.documentLibrary", {
       // options
       options: {
@@ -35,6 +49,8 @@ $(function() {
         widget = this;
 		//create view
 		//this.options.view
+		
+		this.view = this.options.view;
 		
 		this.directory = this.options.directory;
 		//create reset button to clear cache and return elements to default value          
@@ -81,11 +97,15 @@ $(function() {
 				click: function() {
 					if(!widget.history) widget.history = '';
 					widget.history = widget.directory.split('/').splice(-2,2).join("/");
-					$('.column').slice(-2).remove();
+					$('.column').slice(-1).remove();
+					$('.column:last-child').find('li.clicked').removeClass('clicked').addClass('unclicked');
 					if(widget.directory.split('/').splice(-1,1)[0].length == 0) number = -2;
 					else number = -1;
 					widget.directory = widget.directory.split('/').slice(0,number).join("/")+"/";
-					widget.getcontents();
+			  		if(widget.directory.split('/').length==2) widget.back.button({ disabled: true });
+			  		else widget.back.button({ disabled: false });
+//					widget.setWidth();
+//					widget.getcontents();
 				}
 			}),
 			this.forward = $("<div>",{
@@ -116,11 +136,126 @@ $(function() {
 					$('.column').remove();
 					widget.directory = widget.options.directory;
 					widget.getcontents();
+					widget.back.button({ disabled: true });
 				}
 			})
 		];
+		/*
+		this.fileupload = $('<form>',{
+			"id": "fileupload",
+			"action": "#",
+			"method": "POST",
+			"enctype": "multipart/form-data"
+		}).fileupload({
+		        // Uncomment the following to send cross-domain cookies:
+		        //xhrFields: {withCredentials: true},
+				autoUpload: true,
+//				dropZone: $('.column'),
+		        url: 'upload.php'
+		});
 		
+		this.fileuploadbutton = $("<div>",{
+			"html": "<span class='btn btn-success fileinput-button'><i class='icon-plus icon-white'></i><span>Add Files</span><input type='file' name='files[]' multiple></span>"
+		}).appendTo(this.fileupload);
+		
+		this.fileupload.appendTo(widget.toolbar);
+		*/
 		$.each(this.toolbarbuttons,function (i,e) { e.appendTo(widget.toolbar) });
+		
+		this.back.button({ disabled: true });
+		
+		var cache = {};
+		if(this.options.search) {
+			this.searchinput = $("<input>",{
+				"name": "search",
+				"class": "search",
+				"placeholder": "Search...",
+				"type": "text"
+			}).on({
+				keyup: function(event, ui){
+					term = $(event.target).val();
+					delay(function(){
+//				        if ( term in cache ) {
+//				          console.log( cache[ term ] );
+//				        }
+						if(term.length==0) {
+							widget.directory = widget.options.directory;
+							$('.column').remove();
+							widget.getcontents();
+							return false;
+						}
+						$.getJSON('dljson.php',{search: term,dir: widget.options.directory},function(data){
+							if(data) {
+								$('.column:first-child ul').empty();
+								$('.column:not(.column:first-child)').remove();
+								cache[ term ] = data;					  			
+					  			listheader = $("<li>",{
+					  				  "class":"list-header",
+					  				  html: "<span>Name</span><span>Modified</span><span>Size</span><span>Kind</span>"
+					  			}).prependTo($('.column:first-child ul'));
+								$.each(data,function(key,file){
+									path = file.split("/");
+									$('<li>',{
+		  	  						  "class":"file unclicked "+path[path.length-1].substr(path[path.length-1].lastIndexOf(".")+1),
+		  							  "data-filename": path[path.length-1],
+									  "data-path": path.join("/"),
+									  "data-ext": path[path.length-1].substr(path[path.length-1].lastIndexOf(".")+1)
+									}).append($("<span>",{
+	  						  		 	"class":"file-name",							  
+	  						  			text: path[path.length-1].trunc(25)
+	  					  			})).append($("<span>",{
+		  	  						  "class":"file-date",							  
+		  	  						  text: ""
+		  	  					  	})).append($("<span>",{
+		  	  						  "class":"file-size",							  
+		  	  						  text: ""
+		  	  					  	})).append($("<span>",{
+		  	  						  "class":"file-mime",							  
+		  	  						  text: ""
+		  	  					  	})).on({ 
+										mouseup: function( event ) {
+											if($(event.delegateTarget).hasClass('clicked')) return false;
+									  		columnth = $(event.delegateTarget).closest('.column').index()+1;
+									  		columncount = $('.view').find('.column').length;
+											$(event.delegateTarget).closest('.column').find('.clicked').removeClass('clicked').addClass('unclicked');  	
+											$('.column:not(.column:first-child)').remove();
+											$(event.delegateTarget).removeClass('unclicked').addClass('clicked');
+											widget.directory = $(event.delegateTarget).data("path");
+											widget.getdetails();
+										},
+										dblclick: function(event) {
+											ext = $(event.delegateTarget).data("ext");
+											if(ext=='png' || ext=='jpg' || ext=='pdf') window.open(widget.directory,'_newtab');
+											else window.location = widget.directory;
+										}
+									}).appendTo('.column:first-child ul');
+									widget.setWidth();
+								});
+							}
+						})
+					}, 300 );
+				}
+			})
+			/*
+			.autocomplete({
+				source: function(request, response) { 
+					var term = request.term;
+			        if ( term in cache ) {
+			          response( cache[ term ] );
+			          return;
+			        }
+					$.getJSON('dljson.php',{search: term,dir: widget.options.directory},function(data){
+						cache[ term ] = data;
+						response(data);
+					})
+				},
+				select: function( event, ui ) {
+	//				console.log(ui.item.value);
+				}
+			});
+			*/
+			widget.searchinput.appendTo(widget.toolbar);
+		}
 		
 		this.viewoptions = $("<div>",{
 			"class": "view-options"
@@ -145,10 +280,24 @@ $(function() {
 			"type": "radio"
 		}).appendTo(this.viewoptions);
 		
+		
 		this.folder.after(
 			$("<label>",{
 				"for": "folder",
 				text: "Folder"
+			})
+		);
+		
+		this.list = $("<input>", {
+			"name": "view",
+			"id": "list",
+			"type": "radio"
+		}).appendTo(this.viewoptions);
+		
+		this.list.after(
+			$("<label>",{
+				"for": "list",
+				text: "List"
 			})
 		);
 		
@@ -157,8 +306,29 @@ $(function() {
 		this.viewoptions.buttonset().find('input').on({
 			click: function( event ) {
 				$('.view').attr('class','view view-'+event.target.id);
-				if(event.target.id=='folder') widget.documentviewinnertype.find('.column').resizable( "destroy" );
-				else { 
+				widget.view = event.target.id;
+				if(event.target.id=='folder') {
+					$('.view .column, .document-view-inner').css('width','780px');
+					if($('.column:last-child').find('div.file-contents').length>0) { 
+						$('.column:last-child').hide();
+						$('.column:last-child li.clicked').removeClass('clicked').addClass('unclicked');
+					}
+					if(widget.documentviewinnertype.find('.column').is(':data(uiResizable)')) widget.documentviewinnertype.find('.column').resizable( "destroy" );
+					if(widget.documentviewinnertype.find('.column ul').is(':data(sortable)')) widget.documentviewinnertype.find('.column ul').sortable("disable");
+				} else if(event.target.id=='list') { 
+					$('.view .column, .document-view-inner').css('width','800px');
+					if($('.column:last-child').find('div.file-contents').length>0) { 
+						$('.column:last-child').hide();
+						$('.column:last-child li.clicked').removeClass('clicked').addClass('unclicked');
+					}
+					if(widget.documentviewinnertype.find('.column').is(':data(uiResizable)')) widget.documentviewinnertype.find('.column').resizable( "destroy" );
+					if(widget.documentviewinnertype.find('.column ul').is(':data(sortable)')) widget.documentviewinnertype.find('.column ul').sortable("disable");
+				} else if(event.target.id=='column') { 
+					$('.view .column').css('width','200px');
+					if($('.column:last-child').find('div.file-contents').length>0) { 
+						$('.column:last-child').show();
+					}
+					if(widget.documentviewinnertype.find('.column ul').is(':data(sortable)')) widget.documentviewinnertype.find('.column ul').sortable("enable");
 				widget.documentviewinnertype.find('.column').resizable({
 					containment: ".document-view-inner",
 				    maxHeight: 385,
@@ -166,6 +336,7 @@ $(function() {
 			      	minWidth: 200,
 				  	resize: function() { widget.setWidth() }
 			    });
+//				widget.setWidth();
 			}
 			},
 		});
@@ -239,8 +410,6 @@ $(function() {
 	  //set the cached values. private method and can only be set via element changes
 	  getcontents: function( event ) {
 //		  console.log(widget.directory.split('/').length);
-		  if(widget.directory.split('/').length==2) widget.back.button({ disabled: true });
-		  else widget.back.button({ disabled: false });
 		  parentdir = this.directory;
 		  $.getJSON('dljson.php',{dir: parentdir},function(data) {
 			  directory = [];
@@ -257,11 +426,22 @@ $(function() {
 				  	resize: function() { widget.setWidth() }
 			    });
 				
+				$('.view.view-column .column').css('width','200px');
+				
 				widget.homeviewul = $("<ul>",{
 					"class": "folder-contents"
-				}).data('dir',parentdir).appendTo( widget.newview );
+				}).data('dir',parentdir).on({
+					click: function(event, ui) {
+						if($(event.toElement).hasClass('folder-contents')) { 
+							$(event.toElement).closest('div').nextAll('div.column').remove()
+							$(event.currentTarget).children('li.clicked').removeClass('clicked').addClass('unlicked');
+							if($('.column').length==1) widget.back.button({ disabled: true });
+						}
+						
+					}
+				}).appendTo( widget.newview );
 				
-				if(widget.options.moveable==true) {
+				if(widget.options.moveable==true && widget.view=='column') {
 					widget.homeviewul.sortable({
 						placeholder: "ui-state-highlight",
 						connectWith: ".column ul",
@@ -278,17 +458,28 @@ $(function() {
 //							event.preventDefault();
 						},
 					}).droppable().disableSelection();
+				} else {
+//					widget.homeviewul.sortable("destroy");
 				}
+				
+			  listheader = $("<li>",{
+				  "class":"list-header",
+				  html: "<span>Name</span><span>Modified</span><span>Size</span><span>Kind</span>"
+			  })
+			  
+			  listheader.appendTo(widget.homeviewul);
 				
 			  if(data) {
   				  $.each(data,function(key,val) {
 					  if(val.ext.length > 0) {
 	  					  file = $("<li>",{
-	  						  "class":"file unclicked "+val.ext
+	  						  "class":"file unclicked "+val.ext,
+							  "data-filename": val.name,
+							  "data-ext": val.ext
 	  					  }).on({ 
 	  						  mouseup: function( event ) {
-								  	columnth = $(event.delegateTarget).closest('.column').index()+1;
-								  	columncount = $('.view-column').find('.column').length;
+							  	columnth = $(event.delegateTarget).closest('.column').index()+1;
+							  	columncount = $('.view').find('.column').length;
 									if(columnth <= columncount) {
 										$(event.delegateTarget).closest('.column').find('.clicked').removeClass('clicked').addClass('unclicked');
 										widget.directory = widget.directory.split('/').splice(0,columnth).join("/")+'/';
@@ -296,26 +487,42 @@ $(function() {
 									}
 	  							  	if($(event.delegateTarget).hasClass('clicked')) return false;
 	  								$(event.delegateTarget).removeClass('unclicked').addClass('clicked');
-									widget.directory += $(event.delegateTarget).text();
+									widget.directory += $(event.delegateTarget).data("filename");
 	  						    	widget.getdetails();
-	  						   }
+							},
+							dblclick: function(event) {
+								ext = $(event.delegateTarget).data("ext");
+								if(ext=='png' || ext=='jpg' || ext=='jpeg' || ext=='pdf' || ext=='mov'  || ext=='mp4') window.open(widget.directory,'_newtab');
+								else window.location = widget.directory;
+							}
 	  					  });
 	  					  file.append($("<span>",{
-	  						  "class":"file-name",
-	  						  text: val.name
+	  						  "class":"file-name",							  
+	  						  text: val.name.trunc(25)
 	  					  }));
 	  					  file.append($("<span>",{
-	  						  "class":"folder-arrow",
+	  						  "class":"file-date",							  
+	  						  text: val.mod
+	  					  }));
+	  					  file.append($("<span>",{
+	  						  "class":"file-size",							  
+	  						  text: (val.size/1000)+" KB"
+	  					  }));
+	  					  file.append($("<span>",{
+	  						  "class":"file-mime",							  
+	  						  text: val.ext
 	  					  }));
 				
 	  					  file.appendTo(widget.homeviewul);
 					  } else {	
 						  folder = $("<li>",{
-							  "class":"folder unclicked"
-						  }).on({ 
+							  "class":"folder unclicked",
+							  "data-filename": val.name,
+						  }).on({
 							  mouseup: function( event ) {
+								  	widget.back.button({ disabled: false });
 								  	columnth = $(event.delegateTarget).closest('.column').index()+1;
-								  	columncount = $('.view-column').find('.column').length;
+								  	columncount = $('.view').find('.column').length;
 									if(columnth <= columncount) {
 										$(event.delegateTarget).closest('.column').find('.clicked').removeClass('clicked').addClass('unclicked');
 										widget.directory = widget.directory.split('/').splice(0,columnth).join("/")+'/';
@@ -323,19 +530,39 @@ $(function() {
 									}
 								  	if($(event.delegateTarget).hasClass('clicked')) return false;
 									$(event.delegateTarget).removeClass('unclicked').addClass('clicked');
-									widget.directory += $(event.delegateTarget).text()+'/';
+								  	if(widget.view=='folder' || widget.view=='list') { 
+										return false;
+								  	}
+									widget.directory += $(event.delegateTarget).data("filename")+'/';
 							    	widget.getcontents();
+							   },
+							   dblclick: function(event) {
+									widget.directory += $(event.delegateTarget).data("filename")+'/';
+						    		widget.getcontents();
 							   }
 						  });
 						  folder.append($("<span>",{
 							  "class":"folder-name",
-							  text: val.name
+							  text: val.name.trunc(25)
 						  }));
-						  folder.append($("<span>",{
-							  "class":"folder-arrow",
-						  }));
+	  					  folder.append($("<span>",{
+	  						  "class":"file-date",							  
+	  						  text: val.mod
+	  					  }));
+	  					  folder.append($("<span>",{
+	  						  "class":"file-size",							  
+	  						  text: "--"
+	  					  }));
+	  					  folder.append($("<span>",{
+	  						  "class":"file-mime",							  
+	  						  text: "Folder"
+	  					  }));
+						  
 				
 						  folder.appendTo(widget.homeviewul);
+						  $('.document-view-inner').animate({
+						           scrollLeft: widget.homeviewul.offset().left
+						  }, 2000);
 					  }
 				  });
 /*				  widget.homeviewul.find('li').draggable({
@@ -345,7 +572,7 @@ $(function() {
 */				  
 //				  widget.newview.jScrollPane();
 //				  if(widget.view=='column') widget.newview.width('200px');
-				  widget.setWidth();
+				  if(widget.view=='column') widget.setWidth();
 		  	}
 		  });
 	  },
@@ -356,20 +583,31 @@ $(function() {
 			"class": "column"
 		}).appendTo( widget.documentviewinnertype );
 		
+		if(widget.view=='folder' || widget.view=='list') widget.newview.hide();
+		
 		widget.homeview = $("<div>",{
 			"class": "file-contents"
 		}).appendTo( widget.newview );
 		
 		$.getJSON('dljson.php',{dir:widget.directory},function(data) {
-			ext = data[0].ext;
-			size = data[0].size;
-			mod = data[0].mod;
-			name = data[0].name;
+			$.each(data,function(key,file){
+				ext = file.ext;
+				size = file.size;
+				mod = file.mod;
+				name = file.name;
+			});
+
+			if(ext=='pdf' || ext=='png' || ext=='jpg') var view = $("<div>",{
+				"class": "btn btn-sucess file-view",
+				html: '<a target="blank_" href="'+widget.directory+'">View</a>'
+			});
+			else var view = $("<div>");
 		
 			filedetails = [
 		
 			$("<div>",{
-				"class": "file-preview "+ext
+				"class": "file-preview "+ext,
+//				"style": "background-image:url('css/images/icons/"+ext+"/"+ext+"-64_32.png')"
 			}),
 			$("<div>",{
 				"class": "file-name",
@@ -381,25 +619,23 @@ $(function() {
 			}),
 			$("<div>",{
 				"class": "file-size",
-				html: 'Size: <span>'+size+' bytes</span>'
+				html: 'Size: <span>'+(size/1000)+' Kbs</span>'
 			}),
 			$("<div>",{
 				"class": "file-date",
 				html: 'Date Modified: <span>'+mod+'</span>'
 			}),
+			view
+			,
 			$("<div>",{
-				"class": "file-download",
+				"class": "btn btn-primary file-download",
 				html: '<a target="blank_" href="'+widget.directory+'">Download</a>'
-			}),
-			$("<div>",{
-				"class": "file-view",
-				html: '<a target="blank_" href="'+widget.directory+'">View</a>'
 			})
 		
 			];
-		
+			
 			$.each(filedetails,function(i,e) { e.appendTo(widget.homeview) });
-			widget.setWidth();
+			if(widget.view=='column') widget.setWidth();
 		});
 	  },
  
